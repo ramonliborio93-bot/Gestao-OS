@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Gestão de Ordens de Serviço</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- SheetJS para exportar Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="center">
+    <div class="logo-titulo">
+      <h1>Haver & Boecker Niagara</h1>
+      <h2>Gestão de Ordens de Serviço</h2>
+    </div>
+  </div>
+  <img src="logo.png" alt="Logo" class="logo">
+</header>
+
+<main>
+  <form class="form-grid" id="formulario">
+    <!-- Solicitante + DataHora -->
+    <div class="linha">
+      <div class="campo">
+        <label for="solicitante">Nome do Solicitante:</label>
+        <input type="text" id="solicitante" name="solicitante" placeholder="Digite o nome do solicitante aqui">
+      </div>
+      <div class="campo">
+        <label for="hora">Data e Hora da Solicitação:</label>
+        <input type="datetime-local" id="hora" name="hora">
+      </div>
+      <div class="campo">
+        <label for="setor">Nome do setor:</label>
+        <select id="setor" name="setor">
+          <option value="">Selecione o setor</option>
+          <option value="Poliuretano">Produção de poliuretano</option>
+          <option value="Borracha">Produção de borracha</option>
+          <option value="PecasTecnicas">Produção de peças técnicas</option>
+          <option value="Tubos">Produção de Tubos</option>
+          <option value="AlmasMetalicas">Fabricação de Almas Metálicas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="linha">
+      <div class="campo">
+        <label for="equipamento">Nome do Equipamento:</label>
+        <input type="text" id="equipamento" name="equipamento" placeholder="Digite o nome do equipamento aqui">
+      </div>
+      <div class="campo">
+        <label for="TAG">TAG do Equipamento:</label>
+        <input type="text" id="TAG" name="TAG" class="tag-input" placeholder="Digite o TAG aqui">
+      </div>
+    </div>
+
+    <!-- Motivo da solicitação -->
+    <div class="linha">
+      <div class="campo">
+        <label for="solicitacao">Selecione o motivo da solicitação</label>
+        <select id="solicitacao" name="solicitacao" class="problema-input">
+          <option value="">Informe o motivo da solicitação</option>
+          <option value="Entupimento">Entupimento em bico de injeção</option>
+          <option value="Falha de aquecimento">Falha de aquecimento em tanque de resina</option>
+          <option value="Solvente">Desobstrução de bicos de limpeza ar/solvente</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Mantenedor + Atendimento + OS Referência -->
+    <div class="linha">
+      <div class="campo">
+        <label for="mantenedor">Nome do Mantenedor:</label>
+        <input type="text" id="mantenedor" name="mantenedor" placeholder="Digite o nome aqui">
+      </div>
+      <div class="campo">
+        <label for="atendimento">Data e Hora do atendimento:</label>
+        <input type="datetime-local" id="atendimento" name="atendimento">
+      </div>
+      <div class="campo">
+        <label for="osReferencia">Nº OS para atendimento:</label>
+        <input type="text" id="osReferencia" name="osReferencia" placeholder="Ex: OS-2025-001">
+      </div>
+    </div>
+
+    <!-- Botões -->
+    <button type="button" onclick="enviarSolicitacao()">Enviar Solicitação</button>
+    <button type="button" onclick="atendimentoOS()">Atendimento OS</button>
+    <button type="button" onclick="exportarExcel()">Exportar para Excel</button>
+    <button type="button" onclick="resetarOS()">Resetar Nº OS</button>
+  </form>
+
+  <!-- Tabela de pré-visualização -->
+  <h2>Solicitações adicionadas</h2>
+  <table id="tabela" border="1" style="border-collapse: collapse; width: 100%; color: white;">
+    <thead>
+      <tr>
+        <th>Nº OS</th>
+        <th>Mantenedor</th>
+        <th>Hora atendimento</th>
+        <th>Equipamento</th>
+        <th>TAG</th>
+        <th>Solicitante</th>
+        <th>DataHora</th>
+        <th>Setor</th>
+        <th>Motivo</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</main>
+
+<script>
+let dados = [
+  ["Nº OS", "Mantenedor", "Hora atendimento", "Equipamento", "TAG", "Solicitante", "DataHora", "Setor", "Motivo"]
+];
+
+let numeroOS = parseInt(localStorage.getItem("numeroOS")) || 1;
+
+// Enviar Solicitação (operador)
+function enviarSolicitacao() {
+  const solicitante = document.getElementById("solicitante").value;
+  const horaSolicitacao = document.getElementById("hora").value;
+  const setor = document.getElementById("setor").value;
+  const equipamento = document.getElementById("equipamento").value;
+  const tag = document.getElementById("TAG").value;
+  const motivo = document.getElementById("solicitacao").value;
+
+  const osAtual = `OS-2025-${String(numeroOS).padStart(3, "0")}`;
+  numeroOS++;
+  localStorage.setItem("numeroOS", numeroOS);
+
+  // Empurra linha na planilha (mantenedor e atendimento ficam vazios)
+  dados.push([osAtual, "", "", equipamento, tag, solicitante, horaSolicitacao, setor, motivo]);
+
+  // Adiciona na tabela
+  const tabela = document.getElementById("tabela").getElementsByTagName("tbody")[0];
+  const novaLinha = tabela.insertRow();
+  novaLinha.insertCell(0).innerText = osAtual;
+  novaLinha.insertCell(1).innerText = ""; // mantenedor vazio
+  novaLinha.insertCell(2).innerText = ""; // atendimento vazio
+  novaLinha.insertCell(3).innerText = equipamento;
+  novaLinha.insertCell(4).innerText = tag;
+  novaLinha.insertCell(5).innerText = solicitante;
+  novaLinha.insertCell(6).innerText = horaSolicitacao;
+  novaLinha.insertCell(7).innerText = setor;
+  novaLinha.insertCell(8).innerText = motivo;
+
+  // Limpa campos
+  document.getElementById("formulario").reset();
+}
+
+// Atendimento OS (mantenedor)
+function atendimentoOS() {
+  const osReferencia = document.getElementById("osReferencia").value;
+  const mantenedor = document.getElementById("mantenedor").value;
+  const atendimento = document.getElementById("atendimento").value;
+
+  if (!osReferencia) {
+    alert("Informe o Nº OS para atendimento (ex.: OS-2025-001).");
+    return;
+  }
+
+  const tabela = document.getElementById("tabela").getElementsByTagName("tbody")[0];
+
+  // Atualiza na tabela
+  let atualizado = false;
+  for (let i = 0; i < tabela.rows.length; i++) {
+    if (tabela.rows[i].cells[0].innerText === osReferencia) {
+      tabela.rows[i].cells[1].innerText = mantenedor;
+      tabela.rows[i].cells[2].innerText = atendimento;
+      atualizado = true;
+      break;
+    }
+  }
+
+  // Atualiza no array (para Excel)
+  for (let j = 0; j < dados.length; j++) {
+    if (dados[j][0] === osReferencia) {
+      dados[j][1] = mantenedor;
+      dados[j][2] = atendimento;
+    }
+  }
+
+  if (!atualizado) {
+    alert("Nº OS não encontrado. Verifique o número informado.");
+    return;
+  }
+
+  // Limpa campos
+  document.getElementById("formulario").reset();
+}
+
+function exportarExcel() {
+  const ws = XLSX.utils.aoa_to_sheet(dados);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Solicitações");
+  XLSX.writeFile(wb, "solicitacoes.xlsx");
+}
+
+function resetarOS() {
+  const senha = prompt("Digite a senha para resetar o contador:");
+  const senhaCorreta = "1234";
+  if (senha === senhaCorreta) {
+    numeroOS = 1;
+    localStorage.setItem("numeroOS", numeroOS);
+    alert("O contador de Nº OS foi resetado para OS-2025-001.");
+    document.getElementById("tabela").getElementsByTagName("tbody")[0].innerHTML = "";
+    dados = [
+      ["Nº OS", "Mantenedor", "Hora atendimento", "Equipamento", "TAG", "Solicitante", "DataHora", "Setor", "Motivo"]
+    ];
+  } else {
+    alert("Senha incorreta. O contador não foi resetado.");
+  }
+}
+</script>
+
+</body>
+</html>
